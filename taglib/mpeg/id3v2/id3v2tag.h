@@ -34,6 +34,7 @@
 #include "taglib_export.h"
 
 #include "id3v2framefactory.h"
+#include "attachedpictureframe.h"
 
 namespace TagLib {
 
@@ -172,6 +173,21 @@ namespace TagLib {
       virtual unsigned int year() const;
       virtual unsigned int track() const;
 
+	  virtual String albumArtist() const;
+	  virtual String stringYear() const;
+	  virtual String stringTrack() const;
+	  virtual String copyright() const;
+	  virtual String URI() const;
+	  virtual String words() const;
+	  virtual String composers() const;
+	  virtual String arrangements() const;
+	  virtual String origArtist() const;
+	  virtual String encEngineer() const;
+	  virtual String publisher() const;
+	  virtual String disc() const;
+	  virtual String BPM() const;
+	  virtual ByteVector albumArt(ID3v2::AttachedPictureFrame::Type arttype, String &mimetype);
+
       virtual void setTitle(const String &s);
       virtual void setArtist(const String &s);
       virtual void setAlbum(const String &s);
@@ -179,6 +195,22 @@ namespace TagLib {
       virtual void setGenre(const String &s);
       virtual void setYear(unsigned int i);
       virtual void setTrack(unsigned int i);
+
+	  virtual void setAlbumArtist(const String &s);
+	  virtual void setStringYear(const String &s);
+	  virtual void setStringTrack(const String &s);
+	  virtual void setCopyright(const String &s);
+	  virtual void setURI(const String &s);
+	  virtual void setWords(const String &s);
+	  virtual void setComposers(const String &s);
+	  virtual void setArrangements(const String &s);
+	  virtual void setOrigArtist(const String &s);
+	  virtual void setEncEngineer(const String &s);
+	  virtual void setPublisher(const String &s);
+	  virtual void setDisc(const String &s);
+	  virtual void setBPM(const String &s);
+	  virtual void setAlbumArt(const ByteVector &v, ID3v2::AttachedPictureFrame::Type arttype, String &mimetype);
+
 
       virtual bool isEmpty() const;
 
