@@ -33,6 +33,10 @@
 #include "rifffile.h"
 #include "riffutils.h"
 
+#if defined(_MSC_VER) && (_MSC_VER >= 1800) 
+#  include <algorithm> // for std::min and std::max 
+#endif
+
 using namespace TagLib;
 
 struct Chunk
