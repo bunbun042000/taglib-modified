@@ -295,7 +295,7 @@ void Ogg::XiphComment::addField(const String &key, const String &value, bool rep
 
 void Ogg::XiphComment::removeField(const String &key, const String &value)
 {
-  if(!value.isNull())
+  if(!value.isEmpty())
     removeFields(key, value);
   else
     removeFields(key);

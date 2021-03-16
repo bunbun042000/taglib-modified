@@ -236,7 +236,7 @@ MP4::Properties::read(File *file, Atoms *atoms)
         pos += 10;
         const unsigned int bitrateValue = data.toUInt(pos);
         if(bitrateValue != 0 || d->length <= 0) {
-          d->bitrate = static_cast<int>((bitrateValue + 500) / 1000.0 + 0.5);
+          d->bitrate = static_cast<int>((bitrateValue + 500L) / 1000.0 + 0.5);
         }
         else {
           d->bitrate = static_cast<int>(
