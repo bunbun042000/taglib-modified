@@ -233,7 +233,7 @@ TagLib::String ID3v2::Tag::stringYear() const
 {
   if(!d->frameListMap["TDRC"].isEmpty())
     return d->frameListMap["TDRC"].front()->toString();
-  return String::null;
+  return String();
 }
 
 TagLib::uint ID3v2::Tag::track() const
@@ -247,7 +247,7 @@ TagLib::String ID3v2::Tag::stringTrack() const
 {
   if(!d->frameListMap["TRCK"].isEmpty())
     return d->frameListMap["TRCK"].front()->toString();
-  return String::null;
+  return String();
 }
 
 TagLib::String ID3v2::Tag::albumArtist() const
@@ -257,7 +257,7 @@ TagLib::String ID3v2::Tag::albumArtist() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 
@@ -266,7 +266,7 @@ TagLib::String ID3v2::Tag::copyright() const
 	if(!d->frameListMap["TCOP"].isEmpty()) {
 		return d->frameListMap["TCOP"].front()->toString();
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::URI() const
@@ -277,7 +277,7 @@ TagLib::String ID3v2::Tag::URI() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::words() const
@@ -287,7 +287,7 @@ TagLib::String ID3v2::Tag::words() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::composers() const
@@ -297,7 +297,7 @@ TagLib::String ID3v2::Tag::composers() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::arrangements() const
@@ -307,7 +307,7 @@ TagLib::String ID3v2::Tag::arrangements() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::origArtist() const
@@ -317,7 +317,7 @@ TagLib::String ID3v2::Tag::origArtist() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::encEngineer() const
@@ -327,7 +327,7 @@ TagLib::String ID3v2::Tag::encEngineer() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::publisher() const
@@ -337,7 +337,7 @@ TagLib::String ID3v2::Tag::publisher() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::disc() const
@@ -347,7 +347,7 @@ TagLib::String ID3v2::Tag::disc() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
 TagLib::String ID3v2::Tag::BPM() const
@@ -357,10 +357,10 @@ TagLib::String ID3v2::Tag::BPM() const
 	} else {
 		// do nothing
 	}
-	return String::null;
+	return String();
 }
 
-TagLib::ByteVector ID3v2::Tag::albumArt(TagLib::ID3v2::AttachedPictureFrame::Type arttype, TagLib::String &mimetype)
+TagLib::ByteVector ID3v2::Tag::albumArt(ID3v2::AttachedPictureFrame::Type arttype, TagLib::String &mimetype)
 {
 	if(!d->frameListMap["APIC"].isEmpty()) {
 		ID3v2::AttachedPictureFrame *f = (ID3v2::AttachedPictureFrame *)d->frameListMap["APIC"].front();
@@ -373,7 +373,7 @@ TagLib::ByteVector ID3v2::Tag::albumArt(TagLib::ID3v2::AttachedPictureFrame::Typ
 	} else {
 		// do nothing
 	}
-	return ByteVector::null;
+	return ByteVector();
 }
 
 
