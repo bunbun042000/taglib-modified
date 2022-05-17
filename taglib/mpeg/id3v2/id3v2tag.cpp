@@ -644,6 +644,178 @@ void ID3v2::Tag::setAlbumArt(const ByteVector &v, ID3v2::AttachedPictureFrame::T
 }
 
 
+void ID3v2::Tag::setStringTrack(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TRCK");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TRCK", s);
+	return;
+}
+
+void ID3v2::Tag::setAlbumArtist(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TPE2");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TPE2", s);
+	return;
+}
+
+void ID3v2::Tag::setCopyright(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TCOP");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TCOP", s);
+	return;
+}
+
+void ID3v2::Tag::setURI(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("WXXX");
+		return;
+	} else {
+		if (!d->frameListMap["WXXX"].isEmpty()) {
+			String temp = String(" ") + s;
+		} else {
+			const String::Type encoding = d->factory->defaultTextEncoding();
+			UserUrlLinkFrame *f = new UserUrlLinkFrame(encoding);
+			f->setTextEncoding(encoding);
+			addFrame(f);
+			String temp = String(" ") + s;
+			f->setText(temp);
+		}
+	}
+	return ;
+}
+void ID3v2::Tag::setWords(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TEXT");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TEXT", s);
+	return;
+}
+
+void ID3v2::Tag::setComposers(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TCOM");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TCOM", s);
+	return;
+}
+
+void ID3v2::Tag::setArrangements(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TPE4");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TPE4", s);
+	return;
+}
+
+void ID3v2::Tag::setOrigArtist(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TOPE");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TOPE", s);
+	return;
+}
+
+void ID3v2::Tag::setEncEngineer(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TENC");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TENC", s);
+	return;
+}
+
+void ID3v2::Tag::setPublisher(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TPUB");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TPUB", s);
+	return;
+}
+
+void ID3v2::Tag::setDisc(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TPOS");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TPOS", s);
+	return;
+}
+
+void ID3v2::Tag::setBPM(const String &s)
+{
+	if (s.isEmpty()) {
+		removeFrames("TBPM");
+		return;
+	} else {
+		// do nothing
+	}
+	setTextFrame("TBPM", s);
+	return;
+}
+
+void ID3v2::Tag::setAlbumArt(const ByteVector &v, ID3v2::AttachedPictureFrame::Type arttype, String &mimetype)
+{
+	if (v.isEmpty()) {
+		removeFrames("APIC");
+		return;
+	} else {
+		if (!d->frameListMap["APIC"].isEmpty()) {
+			removeFrames("APIC");
+		} else {
+			// do nothing
+		}
+		AttachedPictureFrame *f = new AttachedPictureFrame("APIC");
+		f->setMimeType(mimetype);
+		f->setType(arttype);
+		f->setPicture(v);
+		addFrame(f);
+	}
+	return;
+}
+
+
 bool ID3v2::Tag::isEmpty() const
 {
   return d->frameList.isEmpty();
