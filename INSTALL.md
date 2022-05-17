@@ -13,6 +13,12 @@ In order to build the included examples, use the `BUILD_EXAMPLES` option:
 
     cmake -DBUILD_EXAMPLES=ON [...]
 
+If you want to build TagLib without ZLib, you can use
+
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=Release -DWITH_ZLIB=OFF .
+    make
+    sudo make install
+
 See http://www.cmake.org/cmake/help/runningcmake.html for generic help on
 running CMake.
 
@@ -22,23 +28,25 @@ Mac OS X
 On Mac OS X, you might want to build a framework that can be easily integrated
 into your application. If you set the BUILD_FRAMEWORK option on, it will compile
 TagLib as a framework. For example, the following command can be used to build
-an Universal Binary framework with Mac OS X 10.4 as the deployment target:
+a framework with Mac OS X 10.10 as the deployment target:
 
-    cmake -DCMAKE_BUILD_TYPE=Release \
+    mkdir build; cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_TESTING=OFF \
       -DBUILD_FRAMEWORK=ON \
-      -DCMAKE_C_COMPILER=/usr/bin/gcc-4.0 \
-      -DCMAKE_CXX_COMPILER=/usr/bin/c++-4.0 \
-      -DCMAKE_OSX_SYSROOT=/Developer/SDKs/MacOSX10.4u.sdk/ \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET=10.4 \
-      -DCMAKE_OSX_ARCHITECTURES="ppc;i386;x86_64"
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
+      -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+    make
 
-For a 10.6 Snow Leopard static library with both 32-bit and 64-bit code, use:
+For a 10.10 static library, use:
 
-    cmake -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_OSX_DEPLOYMENT_TARGET=10.6 \
-      -DCMAKE_OSX_ARCHITECTURES="i386;x86_64" \
+    mkdir build; cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_TESTING=OFF \
       -DBUILD_SHARED_LIBS=OFF \
-      -DCMAKE_INSTALL_PREFIX="<folder you want to install to>"
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10 \
+      -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+    make
 
 After `make`, and `make install`, add `libtag.` to your XCode project, and add
 the include folder to the project's User Header Search Paths.
@@ -72,6 +80,7 @@ Useful configuration options used with CMake (GUI and/or command line):
 
   | option                  | description |
   | ----------------------- | ----------- |
+  | `WITH_ZLIB=`            | Whether to build with ZLib |
   | `ZLIB_ROOT=`            | Where to find ZLib's root directory. Assumes parent of: `\include` and `\lib.`|
   | `ZLIB_INCLUDE_DIR=`     | Where to find ZLib's Include directory.|
   | `ZLIB_LIBRARY=`         | Where to find ZLib's Library.
@@ -167,7 +176,7 @@ Unit Tests
 
 If you want to run the test suite to make sure TagLib works properly on your
 system, you need to have cppunit installed. To build the tests, include
-the option `-DBUILD_TESTS=ON -DBUILD_SHARED_LIBS=OFF` when running cmake.
+the option `-DBUILD_TESTING=ON` when running cmake.
 
 The test suite has a custom target in the build system, so you can run
 the tests using make:
@@ -183,7 +192,7 @@ Windows MinGW:
   - `mingw32-make; mingw32-make install DESTDIR=/path/to/install/dir`
 * Build TagLib with testing enabled:
   - ```
-    cmake -G "MinGW Makefiles" -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON -DBUILD_SHARED_LIBS=OFF \
+    cmake -G "MinGW Makefiles" -DBUILD_TESTING=ON -DBUILD_EXAMPLES=ON -DBUILD_SHARED_LIBS=OFF \
     -DCPPUNIT_INCLUDE_DIR=/path/to/cppunit/include \
     -DCPPUNIT_LIBRARIES=/path/to/cppunit/lib/libcppunit.a \
     -DCPPUNIT_INSTALLED_VERSION=1.15.1
@@ -200,7 +209,7 @@ Windows MSVS:
   - It may fail, but the needed libraries should be available in src\cppunit\DebugDll.
 * Build TagLib with testing enabled:
   - ```
-    cmake -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON
+    cmake -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DBUILD_EXAMPLES=ON
     -DBUILD_SHARED_LIBS=OFF -DENABLE_STATIC_RUNTIME=ON
     -DCPPUNIT_INCLUDE_DIR=\path\to\cppunit\include
     -DCPPUNIT_LIBRARIES=\path\to\cppunit\DebugDll\cppunitd_dll.lib

@@ -176,27 +176,6 @@ check_cxx_source_compiles("
   }
 " HAVE_ISO_STRDUP)
 
-# Determine whether zlib is installed.
-
-if(NOT ZLIB_SOURCE)
-  find_package(ZLIB)
-  if(ZLIB_FOUND)
-    set(HAVE_ZLIB 1)
-  else()
-    set(HAVE_ZLIB 0)
-  endif()
-endif()
-
-# Determine whether CppUnit is installed.
-
-if(BUILD_TESTS AND NOT BUILD_SHARED_LIBS)
-  find_package(CppUnit)
-  if(NOT CppUnit_FOUND)
-    message(STATUS "CppUnit not found, disabling tests.")
-    set(BUILD_TESTS OFF)
-  endif()
-endif()
-
 # Detect WinRT mode
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
 	set(PLATFORM WINRT 1)

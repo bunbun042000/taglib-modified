@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
 project(taglib)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
-if(DEFINED ENABLE_STATIC)
-  message(FATAL_ERROR "This option is no longer available, use BUILD_SHARED_LIBS instead")
-endif()
+include(CTest)
+include(FeatureSummary)
+include(GNUInstallDirs)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 if(APPLE)
@@ -32,7 +32,6 @@ if(ENABLE_CCACHE)
 endif()
 
 option(VISIBILITY_HIDDEN "Build with -fvisibility=hidden" OFF)
-option(BUILD_TESTS "Build the test suite" OFF)
 option(BUILD_EXAMPLES "Build the examples" OFF)
 option(BUILD_BINDINGS "Build the bindings" ON)
 
@@ -46,15 +45,11 @@ endif()
 add_definitions(-DHAVE_CONFIG_H)
 set(TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests/")
 
-## the following are directories where stuff will be installed to
-set(LIB_SUFFIX "" CACHE STRING "Define suffix of directory name (32/64)")
-set(EXEC_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}" CACHE PATH "Base directory for executables and libraries")
-set(BIN_INSTALL_DIR "${EXEC_INSTALL_PREFIX}/bin" CACHE PATH "The subdirectory to the binaries prefix (default prefix/bin)")
-set(LIB_INSTALL_DIR "${EXEC_INSTALL_PREFIX}/lib${LIB_SUFFIX}" CACHE PATH "The subdirectory relative to the install prefix where libraries will be installed (default is /lib${LIB_SUFFIX})")
-set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include" CACHE PATH "The subdirectory to the header prefix")
-
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 endif()
 
@@ -100,39 +95,45 @@ math(EXPR TAGLIB_SOVERSION_PATCH "${TAGLIB_SOVERSION_REVISION}")
 
 include(ConfigureChecks.cmake)
 
-if(${ZLIB_FOUND})
-  set(ZLIB_LIBRARIES_FLAGS -lz)
+# Determine whether zlib is installed.
+option(WITH_ZLIB "Build with ZLIB" ON)
+
+if(WITH_ZLIB)
+  if(NOT ZLIB_SOURCE)
+    find_package(ZLIB)
+    if(ZLIB_FOUND)
+      set(HAVE_ZLIB 1)
+      set(ZLIB_LIBRARIES_FLAGS -lz)
+    else()
+      set(HAVE_ZLIB 0)
+    endif()
+  endif()
+  
+  if(NOT HAVE_ZLIB AND ZLIB_SOURCE)
+    set(HAVE_ZLIB 1)
+    set(HAVE_ZLIB_SOURCE 1)
+  endif()
+else()
+  set(HAVE_ZLIB 0)
 endif()
 
 if(NOT WIN32)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/taglib-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/taglib-config" @ONLY)
-  install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/taglib-config" DESTINATION "${BIN_INSTALL_DIR}")
+  install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/taglib-config" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 
 if(WIN32)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/taglib-config.cmd.cmake" "${CMAKE_CURRENT_BINARY_DIR}/taglib-config.cmd")
-  install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/taglib-config.cmd" DESTINATION "${BIN_INSTALL_DIR}")
+  install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/taglib-config.cmd" DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 
 if(NOT BUILD_FRAMEWORK)
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/taglib.pc.cmake" "${CMAKE_CURRENT_BINARY_DIR}/taglib.pc" @ONLY)
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/taglib.pc" DESTINATION "${LIB_INSTALL_DIR}/pkgconfig")
-endif()
-
-if(NOT HAVE_ZLIB AND ZLIB_SOURCE)
-  set(HAVE_ZLIB 1)
-  set(HAVE_ZLIB_SOURCE 1)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/taglib.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 configure_file(config.h.cmake "${CMAKE_CURRENT_BINARY_DIR}/config.h")
-
-if(WITH_ASF)
-  set(TAGLIB_WITH_ASF TRUE)
-endif()
-if(WITH_MP4)
-  set(TAGLIB_WITH_MP4 TRUE)
-endif()
 
 option(TRACE_IN_RELEASE "Output debug messages even in release mode" OFF)
 if(TRACE_IN_RELEASE)
@@ -147,9 +148,13 @@ if(BUILD_BINDINGS)
   add_subdirectory(bindings)
 endif()
 
-if(BUILD_TESTS AND NOT BUILD_SHARED_LIBS)
-  enable_testing()
-  add_subdirectory(tests)
+if(BUILD_TESTING)
+  find_package(CppUnit)
+  if(CppUnit_FOUND)
+    add_subdirectory(tests)
+  else()
+    message(WARNING "BUILD_TESTING requested, but CppUnit not found, skipping tests.")
+  endif()
 endif()
 
 if(BUILD_EXAMPLES)
@@ -157,7 +162,7 @@ if(BUILD_EXAMPLES)
 endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.cmake" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile")
-file(COPY doc/taglib.png DESTINATION doc)
+file(COPY doc/taglib.png DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/doc/html)
 add_custom_target(docs doxygen)
 
 # uninstall target
@@ -166,3 +171,5 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in" "${CMAKE_C
 if(NOT TARGET uninstall)
   add_custom_target(uninstall COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 endif()
+
+feature_summary(WHAT ALL   FATAL_ON_MISSING_REQUIRED_PACKAGES)

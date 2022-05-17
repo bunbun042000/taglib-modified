@@ -74,7 +74,7 @@ namespace TagLib {
 
     typedef TagLib::List<AtomData> AtomDataList;
 
-    class Atom
+    class TAGLIB_EXPORT Atom
     {
     public:
       Atom(File *file);
@@ -88,11 +88,11 @@ namespace TagLib {
       AtomList children;
     private:
       static const int numContainers = 11;
-      static const char *containers[11];
+      static const char *const containers[11];
     };
 
     //! Root-level atoms
-    class Atoms
+    class TAGLIB_EXPORT Atoms
     {
     public:
       Atoms(File *file);

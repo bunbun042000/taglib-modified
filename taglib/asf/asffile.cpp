@@ -97,7 +97,7 @@ namespace
   const ByteVector contentEncryptionGuid("\xFB\xB3\x11\x22\x23\xBD\xD2\x11\xB4\xB7\x00\xA0\xC9\x55\xFC\x6E", 16);
   const ByteVector extendedContentEncryptionGuid("\x14\xE6\x8A\x29\x22\x26 \x17\x4C\xB9\x35\xDA\xE0\x7E\xE9\x28\x9C", 16);
   const ByteVector advancedContentEncryptionGuid("\xB6\x9B\x07\x7A\xA4\xDA\x12\x4E\xA5\xCA\x91\xD3\x8D\xC1\x1A\x8D", 16);
-}
+}  // namespace
 
 class ASF::File::FilePrivate::BaseObject
 {
@@ -194,7 +194,7 @@ private:
 void ASF::File::FilePrivate::BaseObject::parse(ASF::File *file, unsigned int size)
 {
   data.clear();
-  if(size > 24 && size <= (unsigned int)(file->length()))
+  if(size > 24 && size <= static_cast<unsigned int>(file->length()))
     data = file->readBlock(size - 24);
   else
     data = ByteVector();
@@ -384,7 +384,7 @@ void ASF::File::FilePrivate::HeaderExtensionObject::parse(ASF::File *file, unsig
     }
     bool ok;
     long long size = readQWORD(file, &ok);
-    if(!ok) {
+    if(!ok || size < 0 || size > dataSize - dataPos) {
       file->setValid(false);
       break;
     }
@@ -400,7 +400,7 @@ void ASF::File::FilePrivate::HeaderExtensionObject::parse(ASF::File *file, unsig
     else {
       obj = new UnknownObject(guid);
     }
-    obj->parse(file, (unsigned int)size);
+    obj->parse(file, static_cast<unsigned int>(size));
     objects.append(obj);
     dataPos += size;
   }
@@ -656,7 +656,7 @@ void ASF::File::read()
       setValid(false);
       break;
     }
-    long size = (long)readQWORD(this, &ok);
+    long size = static_cast<long>(readQWORD(this, &ok));
     if(!ok) {
       setValid(false);
       break;

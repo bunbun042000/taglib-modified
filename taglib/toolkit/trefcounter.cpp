@@ -52,7 +52,7 @@
 # define ATOMIC_INC(x) __sync_add_and_fetch(&x, 1)
 # define ATOMIC_DEC(x) __sync_sub_and_fetch(&x, 1)
 #else
-# define ATOMIC_INT volatile int
+# define ATOMIC_INT int
 # define ATOMIC_INC(x) (++x)
 # define ATOMIC_DEC(x) (--x)
 #endif
@@ -93,4 +93,4 @@ namespace TagLib
   {
     return static_cast<int>(d->refCount);
   }
-}
+}  // namespace TagLib

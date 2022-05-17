@@ -84,7 +84,7 @@ MP4::Tag::Tag(TagLib::File *file, MP4::Atoms *atoms) :
         if (val.type == TypeUTF8) {
           addItem(atom->name, StringList(String(val.data, String::UTF8)));
         } else {
-          addItem(atom->name, (int)(val.data.toShort()));
+          addItem(atom->name, static_cast<int>(val.data.toShort()));
         }
       }
     }
@@ -140,7 +140,7 @@ MP4::Tag::parseData2(const MP4::Atom *atom, int expectedFlags, bool freeForm)
         debug("MP4: Unexpected atom \"" + name + "\", expecting \"mean\"");
         return result;
       }
-      else if(i == 1 && name != "name") {
+      if(i == 1 && name != "name") {
         debug("MP4: Unexpected atom \"" + name + "\", expecting \"name\"");
         return result;
       }
@@ -177,7 +177,7 @@ MP4::Tag::parseInt(const MP4::Atom *atom)
 {
   ByteVectorList data = parseData(atom);
   if(!data.isEmpty()) {
-    addItem(atom->name, (int)data[0].toShort());
+    addItem(atom->name, static_cast<int>(data[0].toShort()));
   }
 }
 
@@ -213,7 +213,7 @@ MP4::Tag::parseGnre(const MP4::Atom *atom)
 {
   ByteVectorList data = parseData(atom);
   if(!data.isEmpty()) {
-    int idx = (int)data[0].toShort();
+    int idx = static_cast<int>(data[0].toShort());
     if(idx > 0) {
       addItem("\251gen", StringList(ID3v1::genre(idx - 1)));
     }
@@ -541,6 +541,19 @@ MP4::Tag::save()
   return true;
 }
 
+bool
+MP4::Tag::strip()
+{
+  d->items.clear();
+
+  AtomList path = d->atoms->path("moov", "udta", "meta", "ilst");
+  if(path.size() == 4) {
+    saveExisting(ByteVector(), path);
+  }
+
+  return true;
+}
+
 void
 MP4::Tag::updateParents(const AtomList &path, long delta, int ignore)
 {
@@ -699,20 +712,40 @@ MP4::Tag::saveExisting(ByteVector data, const AtomList &path)
   }
 
   long delta = data.size() - length;
-  if(delta > 0 || (delta < 0 && delta > -8)) {
-    data.append(padIlst(data));
-    delta = data.size() - length;
-  }
-  else if(delta < 0) {
-    data.append(padIlst(data, -delta - 8));
-    delta = 0;
-  }
+  if(!data.isEmpty()) {
+    if(delta > 0 || (delta < 0 && delta > -8)) {
+      data.append(padIlst(data));
+      delta = data.size() - length;
+    }
+    else if(delta < 0) {
+      data.append(padIlst(data, -delta - 8));
+      delta = 0;
+    }
 
-  d->file->insert(data, offset, length);
+    d->file->insert(data, offset, length);
 
-  if(delta) {
-    updateParents(path, delta, 1);
-    updateOffsets(delta, offset);
+    if(delta) {
+      updateParents(path, delta, 1);
+      updateOffsets(delta, offset);
+    }
+  }
+  else {
+    // Strip meta if data is empty, only the case when called from strip().
+    MP4::Atom *udta = *(--it);
+    AtomList &udtaChildren = udta->children;
+    AtomList::Iterator metaIt = udtaChildren.find(meta);
+    if(metaIt != udtaChildren.end()) {
+      offset = meta->offset;
+      delta = - meta->length;
+      udtaChildren.erase(metaIt);
+      d->file->removeBlock(meta->offset, meta->length);
+      delete meta;
+
+      if(delta) {
+        updateParents(path, delta, 2);
+        updateOffsets(delta, offset);
+      }
+    }
   }
 }
 
@@ -871,89 +904,89 @@ bool MP4::Tag::contains(const String &key) const
 
 namespace
 {
-  const char *keyTranslation[][2] = {
-    { "\251nam", "TITLE" },
-    { "\251ART", "ARTIST" },
-    { "\251alb", "ALBUM" },
-    { "\251cmt", "COMMENT" },
-    { "\251gen", "GENRE" },
-    { "\251day", "DATE" },
-    { "\251wrt", "COMPOSER" },
-    { "\251grp", "GROUPING" },
-    { "aART", "ALBUMARTIST" },
-    { "trkn", "TRACKNUMBER" },
-    { "disk", "DISCNUMBER" },
-    { "cpil", "COMPILATION" },
-    { "tmpo", "BPM" },
-    { "cprt", "COPYRIGHT" },
-    { "\251lyr", "LYRICS" },
-    { "\251too", "ENCODEDBY" },
-    { "soal", "ALBUMSORT" },
-    { "soaa", "ALBUMARTISTSORT" },
-    { "soar", "ARTISTSORT" },
-    { "sonm", "TITLESORT" },
-    { "soco", "COMPOSERSORT" },
-    { "sosn", "SHOWSORT" },
-    { "shwm", "SHOWWORKMOVEMENT" },
-    { "pgap", "GAPLESSPLAYBACK" },
-    { "pcst", "PODCAST" },
-    { "catg", "PODCASTCATEGORY" },
-    { "desc", "PODCASTDESC" },
-    { "egid", "PODCASTID" },
-    { "purl", "PODCASTURL" },
-    { "tves", "TVEPISODE" },
-    { "tven", "TVEPISODEID" },
-    { "tvnn", "TVNETWORK" },
-    { "tvsn", "TVSEASON" },
-    { "tvsh", "TVSHOW" },
-    { "\251wrk", "WORK" },
-    { "\251mvn", "MOVEMENTNAME" },
-    { "\251mvi", "MOVEMENTNUMBER" },
-    { "\251mvc", "MOVEMENTCOUNT" },
-    { "----:com.apple.iTunes:MusicBrainz Track Id", "MUSICBRAINZ_TRACKID" },
-    { "----:com.apple.iTunes:MusicBrainz Artist Id", "MUSICBRAINZ_ARTISTID" },
-    { "----:com.apple.iTunes:MusicBrainz Album Id", "MUSICBRAINZ_ALBUMID" },
-    { "----:com.apple.iTunes:MusicBrainz Album Artist Id", "MUSICBRAINZ_ALBUMARTISTID" },
-    { "----:com.apple.iTunes:MusicBrainz Release Group Id", "MUSICBRAINZ_RELEASEGROUPID" },
-    { "----:com.apple.iTunes:MusicBrainz Release Track Id", "MUSICBRAINZ_RELEASETRACKID" },
-    { "----:com.apple.iTunes:MusicBrainz Work Id", "MUSICBRAINZ_WORKID" },
-    { "----:com.apple.iTunes:MusicBrainz Album Release Country", "RELEASECOUNTRY" },
-    { "----:com.apple.iTunes:MusicBrainz Album Status", "RELEASESTATUS" },
-    { "----:com.apple.iTunes:MusicBrainz Album Type", "RELEASETYPE" },
-    { "----:com.apple.iTunes:ARTISTS", "ARTISTS" },
-    { "----:com.apple.iTunes:originaldate", "ORIGINALDATE" },
-    { "----:com.apple.iTunes:ASIN", "ASIN" },
-    { "----:com.apple.iTunes:LABEL", "LABEL" },
-    { "----:com.apple.iTunes:LYRICIST", "LYRICIST" },
-    { "----:com.apple.iTunes:CONDUCTOR", "CONDUCTOR" },
-    { "----:com.apple.iTunes:REMIXER", "REMIXER" },
-    { "----:com.apple.iTunes:ENGINEER", "ENGINEER" },
-    { "----:com.apple.iTunes:PRODUCER", "PRODUCER" },
-    { "----:com.apple.iTunes:DJMIXER", "DJMIXER" },
-    { "----:com.apple.iTunes:MIXER", "MIXER" },
-    { "----:com.apple.iTunes:SUBTITLE", "SUBTITLE" },
-    { "----:com.apple.iTunes:DISCSUBTITLE", "DISCSUBTITLE" },
-    { "----:com.apple.iTunes:MOOD", "MOOD" },
-    { "----:com.apple.iTunes:ISRC", "ISRC" },
-    { "----:com.apple.iTunes:CATALOGNUMBER", "CATALOGNUMBER" },
-    { "----:com.apple.iTunes:BARCODE", "BARCODE" },
-    { "----:com.apple.iTunes:SCRIPT", "SCRIPT" },
-    { "----:com.apple.iTunes:LANGUAGE", "LANGUAGE" },
-    { "----:com.apple.iTunes:LICENSE", "LICENSE" },
-    { "----:com.apple.iTunes:MEDIA", "MEDIA" },
+  const std::pair<const char *, const char *> keyTranslation[] = {
+    std::make_pair("\251nam", "TITLE"),
+    std::make_pair("\251ART", "ARTIST"),
+    std::make_pair("\251alb", "ALBUM"),
+    std::make_pair("\251cmt", "COMMENT"),
+    std::make_pair("\251gen", "GENRE"),
+    std::make_pair("\251day", "DATE"),
+    std::make_pair("\251wrt", "COMPOSER"),
+    std::make_pair("\251grp", "GROUPING"),
+    std::make_pair("aART", "ALBUMARTIST"),
+    std::make_pair("trkn", "TRACKNUMBER"),
+    std::make_pair("disk", "DISCNUMBER"),
+    std::make_pair("cpil", "COMPILATION"),
+    std::make_pair("tmpo", "BPM"),
+    std::make_pair("cprt", "COPYRIGHT"),
+    std::make_pair("\251lyr", "LYRICS"),
+    std::make_pair("\251too", "ENCODEDBY"),
+    std::make_pair("soal", "ALBUMSORT"),
+    std::make_pair("soaa", "ALBUMARTISTSORT"),
+    std::make_pair("soar", "ARTISTSORT"),
+    std::make_pair("sonm", "TITLESORT"),
+    std::make_pair("soco", "COMPOSERSORT"),
+    std::make_pair("sosn", "SHOWSORT"),
+    std::make_pair("shwm", "SHOWWORKMOVEMENT"),
+    std::make_pair("pgap", "GAPLESSPLAYBACK"),
+    std::make_pair("pcst", "PODCAST"),
+    std::make_pair("catg", "PODCASTCATEGORY"),
+    std::make_pair("desc", "PODCASTDESC"),
+    std::make_pair("egid", "PODCASTID"),
+    std::make_pair("purl", "PODCASTURL"),
+    std::make_pair("tves", "TVEPISODE"),
+    std::make_pair("tven", "TVEPISODEID"),
+    std::make_pair("tvnn", "TVNETWORK"),
+    std::make_pair("tvsn", "TVSEASON"),
+    std::make_pair("tvsh", "TVSHOW"),
+    std::make_pair("\251wrk", "WORK"),
+    std::make_pair("\251mvn", "MOVEMENTNAME"),
+    std::make_pair("\251mvi", "MOVEMENTNUMBER"),
+    std::make_pair("\251mvc", "MOVEMENTCOUNT"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Track Id", "MUSICBRAINZ_TRACKID"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Artist Id", "MUSICBRAINZ_ARTISTID"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Album Id", "MUSICBRAINZ_ALBUMID"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Album Artist Id", "MUSICBRAINZ_ALBUMARTISTID"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Release Group Id", "MUSICBRAINZ_RELEASEGROUPID"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Release Track Id", "MUSICBRAINZ_RELEASETRACKID"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Work Id", "MUSICBRAINZ_WORKID"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Album Release Country", "RELEASECOUNTRY"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Album Status", "RELEASESTATUS"),
+    std::make_pair("----:com.apple.iTunes:MusicBrainz Album Type", "RELEASETYPE"),
+    std::make_pair("----:com.apple.iTunes:ARTISTS", "ARTISTS"),
+    std::make_pair("----:com.apple.iTunes:originaldate", "ORIGINALDATE"),
+    std::make_pair("----:com.apple.iTunes:ASIN", "ASIN"),
+    std::make_pair("----:com.apple.iTunes:LABEL", "LABEL"),
+    std::make_pair("----:com.apple.iTunes:LYRICIST", "LYRICIST"),
+    std::make_pair("----:com.apple.iTunes:CONDUCTOR", "CONDUCTOR"),
+    std::make_pair("----:com.apple.iTunes:REMIXER", "REMIXER"),
+    std::make_pair("----:com.apple.iTunes:ENGINEER", "ENGINEER"),
+    std::make_pair("----:com.apple.iTunes:PRODUCER", "PRODUCER"),
+    std::make_pair("----:com.apple.iTunes:DJMIXER", "DJMIXER"),
+    std::make_pair("----:com.apple.iTunes:MIXER", "MIXER"),
+    std::make_pair("----:com.apple.iTunes:SUBTITLE", "SUBTITLE"),
+    std::make_pair("----:com.apple.iTunes:DISCSUBTITLE", "DISCSUBTITLE"),
+    std::make_pair("----:com.apple.iTunes:MOOD", "MOOD"),
+    std::make_pair("----:com.apple.iTunes:ISRC", "ISRC"),
+    std::make_pair("----:com.apple.iTunes:CATALOGNUMBER", "CATALOGNUMBER"),
+    std::make_pair("----:com.apple.iTunes:BARCODE", "BARCODE"),
+    std::make_pair("----:com.apple.iTunes:SCRIPT", "SCRIPT"),
+    std::make_pair("----:com.apple.iTunes:LANGUAGE", "LANGUAGE"),
+    std::make_pair("----:com.apple.iTunes:LICENSE", "LICENSE"),
+    std::make_pair("----:com.apple.iTunes:MEDIA", "MEDIA"),
   };
   const size_t keyTranslationSize = sizeof(keyTranslation) / sizeof(keyTranslation[0]);
 
   String translateKey(const String &key)
   {
     for(size_t i = 0; i < keyTranslationSize; ++i) {
-      if(key == keyTranslation[i][0])
-        return keyTranslation[i][1];
+      if(key == keyTranslation[i].first)
+        return keyTranslation[i].second;
     }
 
     return String();
   }
-}
+}  // namespace
 
 PropertyMap MP4::Tag::properties() const
 {
@@ -998,9 +1031,8 @@ PropertyMap MP4::Tag::setProperties(const PropertyMap &props)
 {
   static Map<String, String> reverseKeyMap;
   if(reverseKeyMap.isEmpty()) {
-    int numKeys = sizeof(keyTranslation) / sizeof(keyTranslation[0]);
-    for(int i = 0; i < numKeys; i++) {
-      reverseKeyMap[keyTranslation[i][1]] = keyTranslation[i][0];
+    for(size_t i = 0; i < keyTranslationSize; i++) {
+      reverseKeyMap[keyTranslation[i].second] = keyTranslation[i].first;
     }
   }
 

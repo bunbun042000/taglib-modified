@@ -55,7 +55,7 @@ namespace
   const long MaxPaddingLegnth = 1024 * 1024;
 
   const char LastBlockFlag = '\x80';
-}
+}  // namespace
 
 class FLAC::File::FilePrivate
 {
@@ -497,6 +497,11 @@ void FLAC::File::scan()
 
     seek(nextBlockOffset);
     const ByteVector header = readBlock(4);
+    if(header.size() != 4) {
+      debug("FLAC::File::scan() -- Failed to read a block header");
+      setValid(false);
+      return;
+    }
 
     // Header format (from spec):
     // <1> Last-metadata-block flag

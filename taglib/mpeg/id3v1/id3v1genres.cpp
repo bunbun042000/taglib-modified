@@ -29,7 +29,7 @@ using namespace TagLib;
 
 namespace
 {
-  const wchar_t *genres[] = {
+  const wchar_t *const genres[] = {
     L"Blues",
     L"Classic Rock",
     L"Country",
@@ -224,7 +224,7 @@ namespace
     L"Psybient"
   };
   const int genresSize = sizeof(genres) / sizeof(genres[0]);
-}
+}  // namespace
 
 StringList ID3v1::genreList()
 {
@@ -250,8 +250,7 @@ String ID3v1::genre(int i)
 {
   if(i >= 0 && i < genresSize)
     return String(genres[i]); // always make a copy
-  else
-    return String();
+  return String();
 }
 
 int ID3v1::genreIndex(const String &name)

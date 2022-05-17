@@ -65,6 +65,8 @@ class TestMP4 : public CppUnit::TestFixture
   CPPUNIT_TEST(testRepeatedSave);
   CPPUNIT_TEST(testWithZeroLengthAtom);
   CPPUNIT_TEST(testEmptyValuesRemoveItems);
+  CPPUNIT_TEST(testRemoveMetadata);
+  CPPUNIT_TEST(testNonFullMetaAtom);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -653,6 +655,58 @@ public:
     tag->setTrack(zeroUInt);
     CPPUNIT_ASSERT_EQUAL(zeroUInt, tag->track());
     CPPUNIT_ASSERT(!tag->contains("trkn"));
+  }
+
+  void testRemoveMetadata()
+  {
+    ScopedFileCopy copy("no-tags", ".m4a");
+
+    {
+      MP4::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT(f.isValid());
+      CPPUNIT_ASSERT(!f.hasMP4Tag());
+      MP4::Tag *tag = f.tag();
+      CPPUNIT_ASSERT(tag->isEmpty());
+      tag->setTitle("TITLE");
+      f.save();
+    }
+    {
+      MP4::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT(f.isValid());
+      CPPUNIT_ASSERT(f.hasMP4Tag());
+      CPPUNIT_ASSERT(!f.tag()->isEmpty());
+      f.strip();
+    }
+    {
+      MP4::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT(f.isValid());
+      CPPUNIT_ASSERT(!f.hasMP4Tag());
+      CPPUNIT_ASSERT(f.tag()->isEmpty());
+      CPPUNIT_ASSERT(fileEqual(
+        copy.fileName(),
+        TEST_FILE_PATH_C("no-tags.m4a")));
+    }
+  }
+
+  void testNonFullMetaAtom()
+  {
+    {
+      MP4::File f(TEST_FILE_PATH_C("non-full-meta.m4a"));
+      CPPUNIT_ASSERT(f.isValid());
+      CPPUNIT_ASSERT(f.hasMP4Tag());
+
+      CPPUNIT_ASSERT(f.tag()->contains("covr"));
+      MP4::CoverArtList l = f.tag()->item("covr").toCoverArtList();
+      CPPUNIT_ASSERT_EQUAL((unsigned int)2, l.size());
+      CPPUNIT_ASSERT_EQUAL(MP4::CoverArt::PNG, l[0].format());
+      CPPUNIT_ASSERT_EQUAL((unsigned int)79, l[0].data().size());
+      CPPUNIT_ASSERT_EQUAL(MP4::CoverArt::JPEG, l[1].format());
+      CPPUNIT_ASSERT_EQUAL((unsigned int)287, l[1].data().size());
+
+      PropertyMap properties = f.properties();
+      CPPUNIT_ASSERT_EQUAL(StringList("Test Artist!!!!"), properties["ARTIST"]);
+      CPPUNIT_ASSERT_EQUAL(StringList("FAAC 1.24"), properties["ENCODEDBY"]);
+    }
   }
 };
 

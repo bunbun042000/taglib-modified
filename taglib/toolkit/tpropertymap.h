@@ -29,6 +29,11 @@
 #include "tmap.h"
 #include "tstringlist.h"
 
+#ifdef _MSC_VER
+// Explained at end of tpropertymap.cpp
+extern template class TAGLIB_EXPORT TagLib::Map<TagLib::String, TagLib::StringList>;
+#endif
+
 namespace TagLib {
 
   typedef Map<String,StringList> SimplePropertyMap;
@@ -185,6 +190,15 @@ namespace TagLib {
      * The unsupportedData() lists are concatenated as well.
      */
     PropertyMap &merge(const PropertyMap &other);
+
+    /*!
+     * Returns the value associated with \a key.
+     *
+     * If the map does not contain \a key, it returns defaultValue.
+     * If no defaultValue is specified, it returns an empty string list.
+     */
+    const StringList value(const String &key,
+                           const StringList &defaultValue = StringList()) const;
 
     /*!
      * Returns a reference to the value associated with \a key.
